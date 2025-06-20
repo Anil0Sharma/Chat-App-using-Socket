@@ -13,7 +13,6 @@ exports.createOrGetConversation = async (req, res) => {
         members: [senderId, receiverId],
       });
     }
-
     res.json(conversation);
   } catch (err) {
     res.status(500).json({ message: "Error creating or finding conversation" });
