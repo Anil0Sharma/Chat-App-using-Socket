@@ -7,10 +7,12 @@ export const AuthProvider = ({ children }) => {
     JSON.parse(localStorage.getItem("user"))
   );
 
+  //update local storage when user login/logout
   useEffect(() => {
     localStorage.setItem("user", JSON.stringify(user));
   }, [user]);
 
+  //remove user from local storage
   const logout = () => {
     localStorage.removeItem("user");
     setUser(null);

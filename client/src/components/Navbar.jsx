@@ -7,7 +7,7 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout(); // This should clear user from context/localStorage
+    logout(); // This clear user from context/localStorage
     navigate("/login");
   };
 

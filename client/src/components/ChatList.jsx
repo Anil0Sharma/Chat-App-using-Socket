@@ -10,15 +10,14 @@ export default function ChatList() {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [onlineUsers, setOnlineUsers] = useState([]);
-  const [lastMessages, setLastMessages] = useState({});
+  const [onlineUsers, setOnlineUsers] = useState([]); //
+  const [lastMessages, setLastMessages] = useState({}); //
 
   useEffect(() => {
     const fetchUsersAndMessages = async () => {
       try {
         const { data } = await API.get(`/users?userId=${user._id}`);
         console.log("Fetched users:", data);
-        setUsers(data);
 
         const messagesMap = {};
         await Promise.all(
@@ -30,14 +29,18 @@ export default function ChatList() {
 
             const msgRes = await API.get(`/messages/${convRes.data._id}`);
             const msgs = msgRes.data;
-
+            console.log("Messages for", u._id, msgs);
             if (msgs.length > 0) {
               messagesMap[u._id] = msgs[msgs.length - 1];
             }
           })
         );
 
+        console.log("last message map", messagesMap);
         setLastMessages(messagesMap);
+        setUsers(data);
+        console.log("last message map", lastMessages);
+        console.log("checking user", user._id, lastMessages[user._id]);
       } catch (err) {
         console.error("Error fetching users or messages", err);
       }
@@ -52,9 +55,9 @@ export default function ChatList() {
       setOnlineUsers(online);
     });
 
-    return () => {
-      socket.off("online-users");
-    };
+    // return () => {
+    //   socket.off("online-users");
+    // };
   }, [user]);
 
   return (
@@ -92,7 +95,6 @@ export default function ChatList() {
         </div>
       </aside>
 
-      {/* Chat Window */}
       <main className="flex-1 p-4">
         {selectedUser ? (
           <ChatWindow selectedUser={selectedUser} />

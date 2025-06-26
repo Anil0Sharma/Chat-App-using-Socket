@@ -8,6 +8,8 @@ import Navbar from "./components/Navbar";
 
 function PrivateRoute({ children }) {
   const { user } = useAuth();
+
+  //if user is logged in then nav to homepage else to login
   return user ? children : <Navigate to="/login" />;
 }
 
