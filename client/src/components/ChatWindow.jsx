@@ -9,7 +9,7 @@ const socket = io("http://localhost:5000");
 export default function ChatWindow({ selectedUser }) {
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
-  const [conversationId, setConversationId] = useState(null);
+  // const [conversationId, setConversationId] = useState(null);
   const messagesEndRef = useRef(null);
   const [isTyping, setIsTyping] = useState(false);
 
@@ -19,14 +19,14 @@ export default function ChatWindow({ selectedUser }) {
 
   useEffect(() => {
     const setupChat = async () => {
-      const { data } = await API.post("/conversations", {
-        senderId: user._id,
-        receiverId: selectedUser._id,
-      });
-      setConversationId(data._id);
-
-      const res = await API.get(`/messages/${data._id}`);
-      setMessages(res.data);
+      try {
+        const { data } = await API.get(
+          `/messages/${user._id}/${selectedUser._id}`
+        );
+        setMessages(data);
+      } catch (err) {
+        console.error("Failed to load messages", err);
+      }
     };
 
     if (selectedUser) {
@@ -63,8 +63,8 @@ export default function ChatWindow({ selectedUser }) {
   const handleSend = async (text) => {
     const message = {
       sender: user._id,
+      receiver: selectedUser._id,
       text,
-      conversationId,
     };
 
     const { data } = await API.post("/messages", message);
@@ -76,6 +76,7 @@ export default function ChatWindow({ selectedUser }) {
       text,
     });
   };
+  socket.emit("refresh-latest", { userId: user._id });
 
   useEffect(() => {
     if (!isTyping) {
@@ -91,10 +92,13 @@ export default function ChatWindow({ selectedUser }) {
 
       <div className="flex-1 overflow-y-auto px-4 py-2 pb-6 space-y-2 bg-gray-50 no-scrollbar">
         {messages.map((msg, i) => {
-          const isMine = msg.sender._id === user._id || msg.sender === user._id;
+          // const isMine = msg.sender._id === user._id || msg.sender === user._id;
+          const isMine =
+            (msg.sender && msg.sender._id === user._id) ||
+            msg.sender === user._id;
           const senderName = isMine
             ? "You"
-            : msg.sender.username || selectedUser.username;
+            : msg.sender?.username || selectedUser.username;
 
           return (
             <div

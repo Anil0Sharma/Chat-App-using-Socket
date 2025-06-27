@@ -1,51 +1,38 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import API from "../api";
 import { useAuth } from "../context/AuthContext";
 import ChatWindow from "./ChatWindow";
 import { io } from "socket.io-client";
+
 const socket = io("http://localhost:5000");
 
 export default function ChatList() {
   const { user } = useAuth();
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState([]); // All users (excluding current)
   const [selectedUser, setSelectedUser] = useState(null);
-  const [onlineUsers, setOnlineUsers] = useState([]); //
-  const [lastMessages, setLastMessages] = useState({}); //
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [latestMessages, setLatestMessages] = useState({}); // key: userId
 
   useEffect(() => {
-    const fetchUsersAndMessages = async () => {
+    const fetchData = async () => {
       try {
-        const { data } = await API.get(`/users?userId=${user._id}`);
-        console.log("Fetched users:", data);
+        //Get all users except current
+        const usersRes = await API.get(`/users?userId=${user._id}`);
+        setUsers(usersRes.data);
 
-        const messagesMap = {};
-        await Promise.all(
-          data.map(async (u) => {
-            const convRes = await API.post("/conversations", {
-              senderId: user._id,
-              receiverId: u._id,
-            });
-
-            const msgRes = await API.get(`/messages/${convRes.data._id}`);
-            const msgs = msgRes.data;
-            console.log("Messages for", u._id, msgs);
-            if (msgs.length > 0) {
-              messagesMap[u._id] = msgs[msgs.length - 1];
-            }
-          })
-        );
-
-        console.log("last message map", messagesMap);
-        setLastMessages(messagesMap);
-        setUsers(data);
-        console.log("last message map", lastMessages);
-        console.log("checking user", user._id, lastMessages[user._id]);
+        //Get latest messages per user (aggregation)
+        const latestRes = await API.get(`/messages/latest/${user._id}`);
+        const map = {};
+        latestRes.data.forEach((msg) => {
+          map[msg.otherUserId] = msg.text;
+        });
+        setLatestMessages(map);
       } catch (err) {
         console.error("Error fetching users or messages", err);
       }
     };
-    fetchUsersAndMessages();
+
+    fetchData();
 
     if (user?._id) {
       socket.emit("add-user", user._id);
@@ -55,11 +42,17 @@ export default function ChatList() {
       setOnlineUsers(online);
     });
 
-    // return () => {
-    //   socket.off("online-users");
-    // };
+    return () => {
+      socket.off("online-users");
+    };
   }, [user]);
 
+  useEffect(() => {
+    socket.on("refresh-latest", () => {
+      fetchLatestMessages();
+    });
+    return () => socket.off("refresh-latest");
+  }, []);
   return (
     <div className="flex h-screen overflow-hidden bg-gray-100">
       {/* Sidebar */}
@@ -67,7 +60,8 @@ export default function ChatList() {
         <h2 className="text-xl font-semibold mb-4">All Users</h2>
         <div className="space-y-2 overflow-y-auto max-h-[85vh]">
           {users.map((u) => {
-            const lastMsg = lastMessages[u._id]?.text || "No messages yet";
+            const lastMsg = latestMessages[u._id] || "No messages yet";
+
             return (
               <div
                 key={u._id}
@@ -88,7 +82,7 @@ export default function ChatList() {
                   ></span>
                   <span>{u.username}</span>
                 </div>
-                <div className="">{lastMsg}</div>
+                <div className="text-xs text-gray-500 truncate">{lastMsg}</div>
               </div>
             );
           })}

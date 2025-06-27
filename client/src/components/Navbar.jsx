@@ -18,6 +18,12 @@ export default function Navbar() {
         <span className="text-gray-700 text-sm">
           Logged in as <b>{user?.username}</b>
         </span>
+        <a
+          href="/friend-requests"
+          className="bg-yellow-500 text-white px-4 py-1 rounded hover:bg-yellow-600 text-sm"
+        >
+          Friend Requests
+        </a>
         <button
           onClick={handleLogout}
           className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600 text-sm"

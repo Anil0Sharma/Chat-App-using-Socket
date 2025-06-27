@@ -18,7 +18,6 @@ app.use(express.json());
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const messageRoutes = require("./routes/messages");
-const convRoutes = require("./routes/conversations");
 const { initSocket } = require("./socket");
 
 const { Server } = require("socket.io");
@@ -32,7 +31,6 @@ const io = new Server(server, {
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/messages", messageRoutes);
-app.use("/api/conversations", convRoutes);
 
 mongoose
   .connect(process.env.MONGO_URI)
